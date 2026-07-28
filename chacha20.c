@@ -42,7 +42,7 @@
     b = ROTL32(b, 7);
 
 // processes two 64-byte chacha20 blocks (128 bytes total) simultaneously using 256-bit registers
-void chacha20_avx2_double_block(const uint32_t key[8], const uint32_t nonce[3], uint32_t counter, uint8_t output[128]) 
+void chacha20(const uint32_t key[8], const uint32_t nonce[3], uint32_t counter, uint8_t output[128]) 
 {
     // row 0: constants ("expand 32-byte k")
     __m256i row0 = _mm256_setr_epi32(0x61707865, 0x3320646e, 0x7920622d, 0x6b206574, 0x61707865, 0x3320646e, 0x7920622d, 0x6b206574);
@@ -90,13 +90,14 @@ void chacha20_avx2_double_block(const uint32_t key[8], const uint32_t nonce[3], 
     _mm256_storeu_si256((__m256i*)(output + 96), row3);
 }
 
-int main() {
+int main() 
+{
     uint32_t key[8] = {0x03020100, 0x07060504, 0x0b0a0908, 0x0f0e0d0c, 0x13121110, 0x17161514, 0x1b1a1918, 0x1f1e1d1c};
     uint32_t nonce[3] = {0x00000000, 0x4a000000, 0x00000000};
     uint32_t counter = 1;
     uint8_t keystream[128];
 
-    chacha20_avx2_double_block(key, nonce, counter, keystream);//taken from claude
+    chacha20(key, nonce, counter, keystream);//taken from claude
 
     const uint64_t ITERATIONS = 1000000; // 1 Million iterations (128 MB) otherwise for smaller iterations time is 0.0000 //taken from Claude
 
@@ -108,7 +109,7 @@ int main() {
 
     for (uint64_t i = 0; i < ITERATIONS; i++) 
     {
-        chacha20_avx2_double_block(key, nonce, counter, keystream);
+        chacha20(key, nonce, counter, keystream);
     }
 
     asm volatile("" : : "g"(keystream) : "memory");
@@ -125,7 +126,7 @@ int main() {
     double cycles_per_byte = (double)(end_cycles - start_cycles) / total_bytes;
     double throughput_gbps = ((double)total_bytes / (1024.0 * 1024.0 * 1024.0)) / ((double)total_time_ns / 1e9);
 
-    printf("=== ChaCha20 AVX2 Benchmark (Nanoseconds) ===\n");
+    printf("=== ChaCha20 Benchmark (Nanoseconds) ===\n");
     printf("Total Processed Data : %lu MB\n", total_bytes / (1024 * 1024));
     printf("Total Execution Time : %lu ns\n", total_time_ns);
     printf("Time per Iteration   : %.2f ns\n", ns_per_iteration);
